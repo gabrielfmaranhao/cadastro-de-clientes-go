@@ -17,6 +17,7 @@ func main()  {
 	models.Migrate()
 	r := chi.NewRouter()
 	r.Post("/user/register", handlers.RegisterUser)
+	r.Post("/user/login", handlers.LoginUser)
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Erro ao carregar o arquivo .env")

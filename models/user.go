@@ -5,10 +5,12 @@ import (
 	handlerError "cadastro_de_clientes/utils"
 	"fmt"
 	"time"
-
 	"github.com/asaskevich/govalidator"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	jwt "github.com/dgrijalva/jwt-go"
+	"os"
+	"github.com/joho/godotenv"
 )
 
 type User struct {
@@ -88,4 +90,48 @@ func (user *User) validate() error {
 	return nil
 }
 
+func LoginUser(username, password string)(string, *handlerError.HandlerError) {
+	err := godotenv.Load()
+	if err != nil {
+		return "",&handlerError.HandlerError{
+			Code: 500,
+			Message: err.Error(),
+		}
+	}
+	var user User
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return "", &handlerError.HandlerError{
+			Code: 500,
+			Message: err.Error(),
+		}
+	}
+	erro := conn.Where("username = ?", username).First(&user).Scan(&user)
+	if erro.Error != nil {
+		return "", &handlerError.HandlerError{
+			Code: 400,
+			Message: erro.Error.Error(),
+		}
+	}
+	if !user.IsCorrectPassword(password) {
+		return "", &handlerError.HandlerError{
+			Code: 400,
+			Message: "Username or password incorrect",
+		}
+	}
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["sub"] = user.Id
+	claims["user"] = user.Username
+	claims["iat"] = time.Now().Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	if err != nil {
+		return "", &handlerError.HandlerError{
+			Code: 500,
+			Message: err.Error(),
+		}
+	}
+	return tokenString, nil
+}
 
