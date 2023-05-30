@@ -4,13 +4,14 @@ import (
 	db "cadastro_de_clientes/config"
 	handlerError "cadastro_de_clientes/utils"
 	"fmt"
+	"os"
 	"time"
+
 	"github.com/asaskevich/govalidator"
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/joho/godotenv"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-	jwt "github.com/dgrijalva/jwt-go"
-	"os"
-	"github.com/joho/godotenv"
 )
 
 type User struct {
@@ -89,11 +90,28 @@ func (user *User) validate() error {
 	}
 	return nil
 }
-
-func LoginUser(username, password string)(string, *handlerError.HandlerError) {
+type Token struct{
+	Token string `json:"token"`
+}
+func tokenJWT(username, id string)(token Token, err error){
+	tokenJWT := jwt.New(jwt.SigningMethodHS256)
+	claims := tokenJWT.Claims.(jwt.MapClaims)
+	claims["sub"] = id
+	claims["user"] = username
+	claims["iat"] = time.Now().Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	tokenString, err := tokenJWT.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	if err != nil {
+		return token,err
+	}
+	token.Token = tokenString
+	return token,nil
+}
+func LoginUser(username, password string)(Token, *handlerError.HandlerError) {
+	var token Token
 	err := godotenv.Load()
 	if err != nil {
-		return "",&handlerError.HandlerError{
+		return token, &handlerError.HandlerError{
 			Code: 500,
 			Message: err.Error(),
 		}
@@ -101,37 +119,48 @@ func LoginUser(username, password string)(string, *handlerError.HandlerError) {
 	var user User
 	conn, err := db.OpenConnection()
 	if err != nil {
-		return "", &handlerError.HandlerError{
+		return token, &handlerError.HandlerError{
 			Code: 500,
 			Message: err.Error(),
 		}
 	}
 	erro := conn.Where("username = ?", username).First(&user).Scan(&user)
 	if erro.Error != nil {
-		return "", &handlerError.HandlerError{
+		return token , &handlerError.HandlerError{
 			Code: 400,
 			Message: erro.Error.Error(),
 		}
 	}
 	if !user.IsCorrectPassword(password) {
-		return "", &handlerError.HandlerError{
+		return token, &handlerError.HandlerError{
 			Code: 400,
 			Message: "Username or password incorrect",
 		}
 	}
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = user.Id
-	claims["user"] = user.Username
-	claims["iat"] = time.Now().Unix()
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	token, err = tokenJWT(user.Username, user.Id)
 	if err != nil {
-		return "", &handlerError.HandlerError{
+		return token, &handlerError.HandlerError{
 			Code: 500,
 			Message: err.Error(),
 		}
 	}
-	return tokenString, nil
+	return token, nil
 }
-
+func Profile(id string)(User, *handlerError.HandlerError) {
+	var user User
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return user, &handlerError.HandlerError{
+			Code: 500,
+			Message: err.Error(),
+		}
+	}
+	erro := conn.Where("id = ?", id).First(&user).Scan(&user)
+	if erro.Error != nil {
+		return user , &handlerError.HandlerError{
+			Code: 400,
+			Message: erro.Error.Error(),
+		}
+	}
+	return user,nil
+}

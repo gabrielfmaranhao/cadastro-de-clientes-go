@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
 )
 type register struct {
 	Username string
@@ -45,3 +44,19 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	jsonResponse,_ := json.Marshal(token)
 	w.Write(jsonResponse)
 }
+func ProfileUser(w http.ResponseWriter, r *http.Request) {
+	id := r.Context().Value("id").(string)
+	var user register
+	w.Header().Set("Content-Type", "application/json")
+	json.NewDecoder(r.Body).Decode(&user)
+	userUpdate,err := models.Profile(id)
+	if err != nil {
+		jsonResponse,_ := json.Marshal(err)
+		w.WriteHeader(err.Code)
+		w.Write(jsonResponse)
+		return
+	}
+	jsonResponse,_ := json.Marshal(userUpdate)
+	w.Write(jsonResponse)
+}
+
