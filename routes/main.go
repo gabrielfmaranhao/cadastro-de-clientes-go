@@ -15,6 +15,7 @@ func ConfigureRoutes() *chi.Mux{
 		})
 		r.Mount("/user", UsersRoutes())
 		r.Mount("/session", SessionRoutes())
+		r.Mount("/client", ClientsRoutes())
 	})
 	return router
 }
@@ -30,5 +31,12 @@ func SessionRoutes() chi.Router{
 	router := chi.NewRouter()
 	router.Post("/login", handlers.LoginUser)
 	router.Post("/register", handlers.RegisterUser)
+	return router
+}
+func ClientsRoutes() chi.Router{
+	router := chi.NewRouter()
+	router.Use(handlers.AuthenticateToken)
+	router.Get("/", handlers.Get)
+	router.Post("/", handlers.Post)
 	return router
 }

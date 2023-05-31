@@ -21,6 +21,7 @@ type User struct {
 	Password string `json:"-" gorm:"type:varchar(255)" valid:"notnull"`
 	CreatedAt time.Time `json:"created_at" valid:"-"`
 	UpdatedAt time.Time `json:"updated_at" valid:"-"`
+	Clients []Client `json:"clients" valid:"-"`
 }
 func init() {
 	govalidator.SetFieldsRequiredByDefault(true)
@@ -155,7 +156,7 @@ func Profile(id string)(User, *handlerError.HandlerError) {
 			Message: err.Error(),
 		}
 	}
-	erro := conn.Where("id = ?", id).First(&user).Scan(&user)
+	erro := conn.Where("id = ?", id).Preload("Clients").First(&user).Scan(&user)
 	if erro.Error != nil {
 		return user , &handlerError.HandlerError{
 			Code: 400,

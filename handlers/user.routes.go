@@ -3,7 +3,6 @@ package handlers
 import (
 	"cadastro_de_clientes/models"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 type register struct {
@@ -20,7 +19,6 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewDecoder(r.Body).Decode(&user)
 	newUser,err := models.NewUser(user.Username, user.Cpf, user.Password)
-	fmt.Println(err)
 	if err != nil {
 		jsonResponse,_ := json.Marshal(err)
 		w.WriteHeader(err.Code)
