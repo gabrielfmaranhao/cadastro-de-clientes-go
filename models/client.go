@@ -16,6 +16,8 @@ type Client struct{
 	CreatedAt time.Time `json:"created_at" valid:"-"`
 	UpdatedAt time.Time `json:"updated_at" valid:"-"`
 	UserID string `json:"-" valid:"-"`
+	Cellphones []Cellphone `json:"cellphones" valid:"-"`
+	Emails []Email `json:"emails" valid:"-"`
 }
 
 func GetClients() ([]Client, *handlerError.HandlerError) {
@@ -27,8 +29,7 @@ func GetClients() ([]Client, *handlerError.HandlerError) {
 			Message: fmt.Sprintf("Error prepare: %v", err),
 		}
 	}
-	conn.Find(&clients).Scan(&clients)
-
+	conn.Model(&clients).Preload("Emails").Preload("Cellphones").Find(&clients)
 	return clients,nil
 }
 func NewCLient(name, cpf, id string) (*Client, *handlerError.HandlerError){
@@ -71,12 +72,13 @@ func NewCLient(name, cpf, id string) (*Client, *handlerError.HandlerError){
 		}
 	}
 	erro := conn.Create(client).Scan(&client)
-	if erro != nil {
+	if erro.Error != nil {
 		return nil, &handlerError.HandlerError{
 			Code: 400,
 			Message: fmt.Sprintf("%v", erro.Error),
 		}
 	}
+	fmt.Println(client)
 	return client, nil
 }
 func (client *Client) validate() error{
@@ -85,4 +87,23 @@ func (client *Client) validate() error{
 		return err
 	}
 	return nil
+}
+func ClientProfile(id string) (*Client, *handlerError.HandlerError){
+	var client Client
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 500,
+			Message: fmt.Sprintf("Error prepare: %v", err),
+		}
+	}
+	// erro := conn.Where("id = ?", id).Preload("Clients.Emails").Preload("Clients.Cellphones").First(&user)
+	erro := conn.Model(client).Preload("Emails").Preload("Cellphones").Where("id = ?", id).First(&client)
+	if erro.Error != nil {
+		return nil , &handlerError.HandlerError{
+			Code: 400,
+			Message: erro.Error.Error(),
+		}
+	}
+	return &client, nil
 }

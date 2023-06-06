@@ -156,7 +156,7 @@ func Profile(id string)(User, *handlerError.HandlerError) {
 			Message: err.Error(),
 		}
 	}
-	erro := conn.Where("id = ?", id).Preload("Clients").First(&user).Scan(&user)
+	erro := conn.Where("id = ?", id).Preload("Clients.Emails").Preload("Clients.Cellphones").First(&user)
 	if erro.Error != nil {
 		return user , &handlerError.HandlerError{
 			Code: 400,

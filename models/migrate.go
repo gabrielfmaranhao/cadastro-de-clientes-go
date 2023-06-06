@@ -9,6 +9,6 @@ func Migrate() error {
 	if err != nil {
 		return err
 	}
-	conn.AutoMigrate(User{}, Client{})
+	conn.AutoMigrate(User{}, Client{}, Email{}, Cellphone{})
 	return nil
 }

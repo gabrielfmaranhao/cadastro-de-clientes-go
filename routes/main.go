@@ -2,6 +2,7 @@ package routes
 
 import (
 	"cadastro_de_clientes/handlers"
+	// "cadastro_de_clientes/routes"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -16,17 +17,17 @@ func ConfigureRoutes() *chi.Mux{
 		r.Mount("/user", UsersRoutes())
 		r.Mount("/session", SessionRoutes())
 		r.Mount("/client", ClientsRoutes())
+		r.Mount("/email", EmailsRoutes())
+		r.Mount("/cellphone", CellPhoneRoutes())
 	})
 	return router
 }
-
 func UsersRoutes() chi.Router{
 	router := chi.NewRouter()
 	router.Use(handlers.AuthenticateToken)
 	router.Get("/", handlers.ProfileUser)
 	return router
 }
-
 func SessionRoutes() chi.Router{
 	router := chi.NewRouter()
 	router.Post("/login", handlers.LoginUser)
@@ -38,5 +39,21 @@ func ClientsRoutes() chi.Router{
 	router.Use(handlers.AuthenticateToken)
 	router.Get("/", handlers.Get)
 	router.Post("/", handlers.Post)
+	return router
+}
+func EmailsRoutes() chi.Router{
+	router := chi.NewRouter()
+	router.Use(handlers.AuthenticateToken)
+	router.Post("/{id}", handlers.PostEmail)
+	router.Get("/",handlers.GetEmails)
+	router.Delete("/{id}", handlers.DeleteEmail)
+	return router
+}
+func CellPhoneRoutes() chi.Router{
+	router := chi.NewRouter()
+	router.Use(handlers.AuthenticateToken)
+	router.Post("/{id}", handlers.PostCellphone)
+	router.Get("/",handlers.GetCellphones)
+	router.Delete("/{id}", handlers.DeleteCellphone)
 	return router
 }

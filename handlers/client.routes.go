@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 )
-type create struct {
+type createClient struct {
 	Name string
 	Cpf string
+	Email string
+	Number string
 }
 func Get(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Set("Content-Type", "application/json")
@@ -22,7 +24,7 @@ func Get(w http.ResponseWriter, r *http.Request)  {
 	w.Write(jsonResponse)
 }
 func Post(w http.ResponseWriter, r *http.Request) {
-	var client create
+	var client createClient
 	id := r.Context().Value("id").(string)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewDecoder(r.Body).Decode(&client)
@@ -33,6 +35,10 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
-	jsonResponse,_ := json.Marshal(newClient)
+	models.NewEmail(client.Email, newClient.Id)
+	models.NewCellphone(client.Number, newClient.Id)
+	clientNew,_ := models.ClientProfile(newClient.Id)
+	jsonResponse,_ := json.Marshal(clientNew)
+	w.WriteHeader(201)
 	w.Write(jsonResponse)
 }
