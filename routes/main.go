@@ -2,7 +2,6 @@ package routes
 
 import (
 	"cadastro_de_clientes/handlers"
-	// "cadastro_de_clientes/routes"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -39,6 +38,8 @@ func ClientsRoutes() chi.Router{
 	router.Use(handlers.AuthenticateToken)
 	router.Get("/", handlers.Get)
 	router.Post("/", handlers.Post)
+	router.Patch("/{id}", handlers.Update)
+	router.Delete("/{id}", handlers.Delete)
 	return router
 }
 func EmailsRoutes() chi.Router{
@@ -47,6 +48,7 @@ func EmailsRoutes() chi.Router{
 	router.Post("/{id}", handlers.PostEmail)
 	router.Get("/",handlers.GetEmails)
 	router.Delete("/{id}", handlers.DeleteEmail)
+	router.Patch("/{id}", handlers.UpdateEmail)
 	return router
 }
 func CellPhoneRoutes() chi.Router{
@@ -55,5 +57,6 @@ func CellPhoneRoutes() chi.Router{
 	router.Post("/{id}", handlers.PostCellphone)
 	router.Get("/",handlers.GetCellphones)
 	router.Delete("/{id}", handlers.DeleteCellphone)
+	router.Patch("/{id}", handlers.UpdateCellphone)
 	return router
 }

@@ -51,3 +51,19 @@ func DeleteEmail(w http.ResponseWriter, r *http.Request){
 	}
 	w.WriteHeader(204)
 }
+func UpdateEmail(w http.ResponseWriter, r *http.Request){
+	var email createEmail
+	w.Header().Set("Content-Type", "application/json")
+	json.NewDecoder(r.Body).Decode(&email)
+	idEmail := chi.URLParam(r, "id")
+	response,err := models.UpdateEmail(email.Email, idEmail)
+	if err != nil {
+		jsonResponse,_ := json.Marshal(err)
+		w.WriteHeader(err.Code)
+		w.Write(jsonResponse)
+		return
+	}
+	jsonResponse,_ := json.Marshal(response)
+	w.WriteHeader(201)
+	w.Write(jsonResponse)
+}

@@ -55,7 +55,7 @@ func (cellphone *Cellphone)  validate() error {
 	}
 	return nil
 }
-// func get all cellphone
+
 func GetCellphones()([]Cellphone, *handlerError.HandlerError){
 	var cellphones []Cellphone
 	conn, err := db.OpenConnection()
@@ -68,7 +68,7 @@ func GetCellphones()([]Cellphone, *handlerError.HandlerError){
 	conn.Model(&cellphones).Preload("ClientID").Find(&cellphones)
 	return cellphones,nil
 }
-// func delete
+
 func DeleteCellPhone(id string) *handlerError.HandlerError{
 	var cellphone = Cellphone{
 		Id: id,
@@ -88,4 +88,39 @@ func DeleteCellPhone(id string) *handlerError.HandlerError{
 		}
 	}
 	return nil
+}
+
+func UpdateCelphone(number, id string) (*Cellphone, *handlerError.HandlerError){
+	var cellphone Cellphone
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 500,
+			Message: fmt.Sprintf("Error prepare: %v", err),
+		}
+	}
+	_ = conn.Where("number = ?", number).First(&cellphone).Error
+	if  cellphone.Id != "" {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: "Number is exists",
+		}
+	}
+	err = conn.Where("id = ? ", id).First(&cellphone).Error
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: "Not found",
+		}
+	}
+	cellphone.Number = number
+	err = conn.Model(&cellphone).Updates(cellphone).Error
+	if err != nil {
+		return nil,&handlerError.HandlerError{
+			Code: 400,
+			Message: err.Error(),
+		}
+	}
+	return &cellphone,nil
+
 }

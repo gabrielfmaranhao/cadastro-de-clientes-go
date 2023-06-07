@@ -51,3 +51,19 @@ func DeleteCellphone(w http.ResponseWriter, r *http.Request){
 	}
 	w.WriteHeader(204)
 }
+func UpdateCellphone(w http.ResponseWriter, r *http.Request){
+	var cellphone createCellphone
+	w.Header().Set("Content-Type", "application/json")
+	json.NewDecoder(r.Body).Decode(&cellphone)
+	idCellphone := chi.URLParam(r, "id")
+	response,err := models.UpdateCelphone(cellphone.Number, idCellphone)
+	if err != nil {
+		jsonResponse,_ := json.Marshal(err)
+		w.WriteHeader(err.Code)
+		w.Write(jsonResponse)
+		return
+	}
+	jsonResponse,_ := json.Marshal(response)
+	w.WriteHeader(201)
+	w.Write(jsonResponse)
+}

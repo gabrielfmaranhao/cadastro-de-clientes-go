@@ -85,3 +85,37 @@ func DeleteEmail(id string) *handlerError.HandlerError{
 	}
 	return nil
 }
+func UpdateEmail(emailString, id string) (*Email, *handlerError.HandlerError){
+	var email Email
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 500,
+			Message: fmt.Sprintf("Error prepare: %v", err),
+		}
+	}
+	_ = conn.Where("email = ?", emailString).First(&email).Error
+	if  email.Id != "" {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: "Email is exists",
+		}
+	}
+	err = conn.Where("id = ? ", id).First(&email).Error
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: "Not found",
+		}
+	}
+	email.Email = emailString
+	err = conn.Model(&email).Updates(email).Error
+	if err != nil {
+		return nil,&handlerError.HandlerError{
+			Code: 400,
+			Message: err.Error(),
+		}
+	}
+	return &email,nil
+
+}

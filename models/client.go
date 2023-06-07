@@ -3,10 +3,11 @@ package models
 import (
 	db "cadastro_de_clientes/config"
 	handlerError "cadastro_de_clientes/utils"
-	"time"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
+	"time"
+
 	"github.com/asaskevich/govalidator"
+	uuid "github.com/satori/go.uuid"
 )
 type Client struct{
 	Id string `json:"id" gorm:"type:uuid;primary_key" valid:"uuid"`
@@ -97,7 +98,6 @@ func ClientProfile(id string) (*Client, *handlerError.HandlerError){
 			Message: fmt.Sprintf("Error prepare: %v", err),
 		}
 	}
-	// erro := conn.Where("id = ?", id).Preload("Clients.Emails").Preload("Clients.Cellphones").First(&user)
 	erro := conn.Model(client).Preload("Emails").Preload("Cellphones").Where("id = ?", id).First(&client)
 	if erro.Error != nil {
 		return nil , &handlerError.HandlerError{
@@ -106,4 +106,82 @@ func ClientProfile(id string) (*Client, *handlerError.HandlerError){
 		}
 	}
 	return &client, nil
+}
+type CreateClient struct {
+	Name string
+	Cpf string
+	Email string
+	Number string
+}
+func UpdateClient(client CreateClient , id string) (*Client, *handlerError.HandlerError){
+	var clientUpdate Client
+	var user User
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 500,
+			Message: fmt.Sprintf("Error prepare: %v", err),
+		}
+	}
+	erro := conn.Model(Client{}).Preload("Emails").Preload("Cellphones").Where("id = ?", id).First(&clientUpdate).Error
+	if erro != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: erro.Error(),
+		}
+	}
+	errorPerson := handlerError.ValidateCpf(client.Cpf)
+	if errorPerson != nil {
+		return nil, errorPerson
+	}
+	conn.Where("cpf = ?", client.Cpf).First(&user).Scan(&user)
+	if user.Id != ""{
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: "Cpf is exist",
+		}
+	}
+	erro = conn.Model(&clientUpdate).Updates(client).Error
+	if erro != nil {
+		return nil, &handlerError.HandlerError{
+			Code: 400,
+			Message: erro.Error(),
+		}
+	}
+	conn.Model(client).Preload("Emails").Preload("Cellphones").Where("id = ?", id).First(&clientUpdate)
+	return &clientUpdate, nil
+}
+func DeleteClient(id string) *handlerError.HandlerError {
+	var client Client
+	// var emails  []Email
+	conn, err := db.OpenConnection()
+	if err != nil {
+		return  &handlerError.HandlerError{
+			Code: 500,
+			Message: fmt.Sprintf("Error prepare: %v", err),
+		}
+	}
+	err = conn.Where("id = ?", id).First(&client).Error
+	if err != nil {
+		return &handlerError.HandlerError{
+			Code: 400,
+			Message: err.Error(),
+		}
+	}
+	err = conn.Where("client_id = ?", &client.Id).Delete(Cellphone{}).Error
+	if err != nil {
+		return &handlerError.HandlerError{
+			Code: 400,
+			Message: err.Error(),
+		}
+	}
+	err = conn.Where("client_id = ?", &client.Id).Delete(Email{}).Error
+	if err != nil {
+		return &handlerError.HandlerError{
+			Code: 400,
+			Message: err.Error(),
+		}
+	}
+	conn.Delete(&client)
+	return nil
 }

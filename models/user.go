@@ -21,7 +21,7 @@ type User struct {
 	Password string `json:"-" gorm:"type:varchar(255)" valid:"notnull"`
 	CreatedAt time.Time `json:"created_at" valid:"-"`
 	UpdatedAt time.Time `json:"updated_at" valid:"-"`
-	Clients []Client `json:"clients" valid:"-"`
+	Clients []Client `json:"clients" valid:"-" gorm:"constraint:OnDelete:CASCADE"`
 }
 func init() {
 	govalidator.SetFieldsRequiredByDefault(true)
